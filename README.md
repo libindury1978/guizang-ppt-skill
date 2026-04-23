@@ -21,13 +21,26 @@
 
 ## 安装
 
-把整个 skill 目录放进 Claude Code 的 skills 目录:
+### 方式一:把下面这段话直接发给 AI(推荐)
+
+> 帮我安装 `guizang-ppt-skill` 这个 Claude Code skill。请按下面步骤做:
+>
+> 1. 确保 `~/.claude/skills/` 目录存在(不存在就创建)
+> 2. 执行 `git clone https://github.com/op7418/guizang-ppt-skill.git ~/.claude/skills/magazine-web-ppt`
+> 3. 验证:`ls ~/.claude/skills/magazine-web-ppt/` 应该看到 `SKILL.md`、`assets/`、`references/` 三项
+> 4. 告诉我安装好了,之后我说"做一份杂志风 PPT"之类的话就会触发这个 skill
+
+把这段话复制粘贴给 Claude Code / Cursor / 任何有 shell 权限的 AI Agent,它会自动完成安装。
+
+### 方式二:手动命令行
 
 ```bash
 git clone https://github.com/op7418/guizang-ppt-skill.git ~/.claude/skills/magazine-web-ppt
 ```
 
-Claude Code 会在对话里自动发现并调用这个 skill。触发关键词:
+### 触发方式
+
+装好后,Claude Code 会在对话里自动发现并调用这个 skill。触发关键词:
 
 - "帮我做一份杂志风 PPT"
 - "生成一个 horizontal swipe deck"
