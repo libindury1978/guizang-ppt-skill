@@ -1,13 +1,18 @@
 ---
 name: magazine-web-ppt
-description: 生成"电子杂志 × 电子墨水"风格的横向翻页网页 PPT（单 HTML 文件），含 WebGL 流体背景、衬线标题 + 非衬线正文、章节幕封、数据大字报、图片网格等模板。当用户需要制作分享 / 演讲 / 发布会风格的网页 PPT，或提到"杂志风 PPT"、"horizontal swipe deck"、"editorial magazine"、"e-ink presentation"时使用。
+description: 生成"电子杂志 × 电子墨水"风格的演示文稿，支持横向翻页网页 PPT（单 HTML）和可编辑 PowerPoint 文档（.pptx）。当用户需要杂志风 PPT、horizontal swipe deck、editorial magazine、e-ink presentation，或明确要求可编辑 PPT / 导出 pptx 时使用。
 ---
 
 # Magazine Web Ppt
 
 ## 这个 Skill 做什么
 
-生成一份**单文件 HTML**的横向翻页 PPT，视觉基调是：
+生成一份"电子杂志 × 电子墨水"风格演示，支持两种输出：
+
+- **HTML 模式**：单文件横向翻页网页 PPT（强视觉）
+- **PPTX 模式**：可编辑 `.pptx`（便于协作和二次修改）
+
+共同视觉基调是：
 
 - **电子杂志 + 电子墨水**混血风格
 - **WebGL 流体 / 等高线 / 色散背景**（hero 页可见）
@@ -52,6 +57,7 @@ description: 生成"电子杂志 × 电子墨水"风格的横向翻页网页 PPT
 | 9 | 有现成文档的话，文档怎么发给你？ | 接收素材的标准方式（路径/粘贴/拍照） |
 | 10 | 每一页的信息架构（层数）和字数限制 | L1≤20字 / L2≤60字 / L3≤40字 |
 | 11 | 先出大纲确认，再出文案确认，再出初稿确认，最后才生成 HTML | 迭代流程（见下方） |
+| 12 | 最终交付格式是什么？ | `html` / `pptx` / 两者都要（决定后续分支流程） |
 
 **⚠️ 硬规则：大纲和每一页文案必须经用户确认后才能动手写代码。不允许跳过确认直接生成终稿。**
 
@@ -141,7 +147,15 @@ description: 生成"电子杂志 × 电子墨水"风格的横向翻页网页 PPT
 
 **⚠️ 不允许跳过文案确认直接生成无法修改的终稿。**
 
-### Step 2 · 拷贝模板
+### Step 2 · 选择输出路径并初始化
+
+先确认用户要哪种交付：
+
+- **A. HTML 模式**：继续沿用本 skill 的网页模板流（Step 2A + Step 3A）
+- **B. PPTX 模式**：生成可编辑 PowerPoint（Step 2B + Step 3B）
+- **C. 两者都要**：先走 PPTX（确保可编辑内容），再落地 HTML 视觉稿
+
+#### 2A · 拷贝 HTML 模板
 
 从 `assets/template.html` 拷贝一份到目标位置（通常是 `项目/XXX/ppt/index.html`），同时在同级建一个 `images/` 文件夹准备接图片。
 
@@ -185,7 +199,19 @@ cp "<SKILL_ROOT>/assets/template.html" "项目/XXX/ppt/index.html"
 - 不要接受用户给的任意 hex 值——委婉拒绝并展示 5 套让选
 - 不要混搭(例如 ink 取墨水经典、paper 取沙丘)——会彻底违和
 
-### Step 3 · 填充内容
+#### 2B · 准备 PPTX 素材（可编辑模式）
+
+在项目目录准备一个结构化输入文件（推荐 JSON），包含：
+
+- deck 标题、副标题、作者
+- 主题色（沿用 `references/themes.md` 的预设名称）
+- slides 列表（每页 type、L1/L2/L3、图片路径）
+
+可参考 `references/pptx-layout-map.md` 中的 slide type 映射。
+
+### Step 3 · 填充内容与生成
+
+#### 3A · HTML 模式
 
 #### 3.0 · 预检:类名必须在 template.html 里有定义（**最重要**）
 
@@ -250,6 +276,20 @@ cp "<SKILL_ROOT>/assets/template.html" "项目/XXX/ppt/index.html"
 
 组件细节(字体、颜色、网格、图标、callout、stat-card 等)在 `references/components.md`。
 
+#### 3B · PPTX 模式（生成可编辑文档）
+
+使用 `scripts/build_pptx.py` 根据 JSON 规格生成 `.pptx`：
+
+```bash
+python3 -m pip install python-pptx
+
+python3 "<SKILL_ROOT>/scripts/build_pptx.py" \
+  --spec "项目/XXX/ppt/deck.json" \
+  --output "项目/XXX/ppt/deck.pptx"
+```
+
+脚本会保留可编辑文本框和图片对象，便于用户在 Keynote / PowerPoint 中继续改字、换图、调版式。
+
 ### Step 4 · 对照检查清单自检
 
 生成完一定要打开 `references/checklist.md`，逐项对照。里面总结了**真实迭代过程中踩过的所有坑**，P0 级别的问题（emoji、图片撑破、标题换行、字体分工）必须全部通过。
@@ -265,15 +305,21 @@ cp "<SKILL_ROOT>/assets/template.html" "项目/XXX/ppt/index.html"
 7. **标题用衬线,正文用非衬线,元数据用等宽**
 8. **每一页必须检查内容是否溢出**——文字截断、文字出框、元素超出页面边界。检查方式：浏览器中目测每一页四个边角是否有内容贴边或越界。发现溢出立即调整字号/间距/行数，不要带溢出交付。
 
-### Step 5 · 本地预览
+### Step 5 · 本地预览 / 打开文件
 
-直接在浏览器打开 `index.html` 就行。macOS 下：
+HTML 模式：直接在浏览器打开 `index.html`。macOS 下：
 
 ```bash
 open "项目/XXX/ppt/index.html"
 ```
 
 不需要本地服务器。图片走相对路径 `images/xxx.png`。
+
+PPTX 模式：直接打开输出文件：
+
+```bash
+open "项目/XXX/ppt/deck.pptx"
+```
 
 ### Step 6 · 迭代
 
@@ -292,7 +338,10 @@ magazine-web-ppt/
     ├── components.md     ← 组件手册（字体、色、网格、图标、callout、stat、pipeline...）
     ├── layouts.md        ← 10 种页面布局骨架（可直接粘贴）
     ├── themes.md         ← 5 套主题色预设（只能选不能自定义）
-    └── checklist.md      ← 质量检查清单（P0/P1/P2/P3 分级）
+    ├── checklist.md      ← 质量检查清单（P0/P1/P2/P3 分级）
+    └── pptx-layout-map.md ← HTML Layout 到 PPTX slide type 映射
+├── scripts/
+│   └── build_pptx.py     ← 根据 JSON 规格生成可编辑 .pptx
 ```
 
 **加载顺序建议**：
@@ -301,7 +350,8 @@ magazine-web-ppt/
 3. **动手前 Read `assets/template.html` 的 `<style>` 块**——这是类名的唯一来源,缺类会导致整页样式崩
 4. 读 `layouts.md` 挑布局(顶部有 Pre-flight 类名清单和主题节奏规划)
 5. 细节调整时读 `components.md` 查组件
-6. 生成后读 `checklist.md` 自检(顶部 P0-0 规则强制预检)
+6. 若输出 PPTX，先读 `pptx-layout-map.md` 决定 slide type
+7. 生成后读 `checklist.md` 自检(顶部 P0-0 规则强制预检)
 
 ## 核心设计原则（哲学）
 
